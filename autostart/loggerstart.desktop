@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Kraken Logger Script
+WorkingDirectory=/home/ngcp25/Projects/ngcp-uav-software/src/
+Exec=gnome-terminal -- bash -ic "python3 /home/ngcp25/Projects/ngcp-uav-software/src/loggers/kraken_logger.py; exec bash"
+X-GNOME-Autostart-enabled=true

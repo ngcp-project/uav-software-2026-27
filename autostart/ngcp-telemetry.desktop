@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=NGCP Telemetry Pipeline
+Exec=bash -l -c 'export DISPLAY=:0 && /home/ngcp25/work/ngcp-pixhawk-pi5-companion/scripts/ngcp-mavproxy-telemetry.sh'
+Terminal=true
+X-GNOME-Autostart-enabled=true

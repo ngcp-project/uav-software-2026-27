@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="payload_drop">
+
+    <gravity>0 0 -9.81</gravity>
+
+    <!-- Constant wind (m/s) in world frame: +Y crosswind -->
+    <wind>
+      <linear_velocity>0 6 0</linear_velocity>
+    </wind>
+
+    <!-- Core systems -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+
+    <!-- Applies wind forces (uniform world wind) -->
+    <plugin filename="gz-sim-wind-effects-system" name="gz::sim::systems::WindEffects"/>
+
+    <!-- Light so you can see -->
+    <light name="sun" type="directional">
+      <pose>0 0 100 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <direction>-0.3 0.2 -1</direction>
+    </light>
+
+    <!-- Ground -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>2000 2000</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>2000 2000</size></plane></geometry>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Carrier: just a moving "aircraft stand-in" -->
+    <model name="carrier">
+      <!-- Start near origin so it's easy to see -->
+      <pose>-30 12.5 30 0 0 0</pose>
+
+      <link name="carrier_link">
+        <gravity>false</gravity>
+        <inertial>
+          <mass>50</mass>
+          <inertia>
+            <ixx>10</ixx><iyy>10</iyy><izz>10</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+        <collision name="collision"><geometry><box><size>4 1 0.3</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>4 1 0.3</size></box></geometry>
+          <material><ambient>0.1 0.4 0.1 1</ambient><diffuse>0.2 0.8 0.2 1</diffuse></material>
+        </visual>
+      </link>
+
+      <!-- Carrier velocity (m/s): +X forward -->
+      <plugin filename="gz-sim-velocity-control-system" name="gz::sim::systems::VelocityControl">
+        <initial_linear>25 0 0</initial_linear>
+        <initial_angular>0 0 0</initial_angular>
+      </plugin>
+
+      <!-- Detach payload by publishing Empty to /payload/detach -->
+      <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
+        <parent_link>carrier_link</parent_link>
+        <child_model>payload</child_model>
+        <child_link>payload_link</child_link>
+        <detach_topic>/payload/detach</detach_topic>
+      </plugin>
+    </model>
+
+    <!-- Payload: big + bright -->
+    <model name="payload">
+      <pose>-30 12.5 29.0 0 0 0</pose>
+
+      <link name="payload_link">
+        <inertial>
+          <mass>2.0</mass>
+          <inertia>
+            <ixx>0.2</ixx><iyy>0.2</iyy><izz>0.2</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+
+        <!-- 1m cube -->
+        <collision name="collision"><geometry><box><size>1 1 1</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>1 1 1</size></box></geometry>
+          <material><ambient>1 1 0 1</ambient><diffuse>1 1 0 1</diffuse></material>
+        </visual>
+      </link>
+
+      <!-- Publish model pose -->
+      <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
+        <publish_model_pose>true</publish_model_pose>
+        <update_frequency>30</update_frequency>
+      </plugin>
+    </model>
+
+  </world>
+</sdf>

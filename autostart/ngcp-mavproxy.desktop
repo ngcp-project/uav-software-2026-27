@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=NGCP MAVProxy Autostart
+Comment=Launch MAVProxy on boot to validate Pixhawk UART telemetry
+Exec=/home/ngcp25/.local/bin/ngcp-mavproxy-autostart
+Terminal=false
+X-GNOME-Autostart-enabled=true

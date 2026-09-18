@@ -1,0 +1,19 @@
+{
+  "script": "fusion_logger.py",
+  "run_id": "20260417_140805",
+  "kraken_file": "/home/ngcp25/Projects/ngcp-uav-software/logs/kraken/doa_20260417_140805.jsonl",
+  "telemetry_files": [
+    "/home/ngcp25/Projects/ngcp-uav-software/logs/telemetry/telemetry_20260417_140815_20260417_141020.jsonl"
+  ],
+  "fusion_file": "/home/ngcp25/Projects/ngcp-uav-software/logs/fusion/fusion_20260417_140805.jsonl",
+  "fusion_time_ms": 1776460221078,
+  "kraken_records_in": 745,
+  "telemetry_records_in": 2035,
+  "fused_records_out": 548,
+  "discarded_dt_exceeded": 197,
+  "usable_for_triangulation": 453,
+  "max_time_diff_ms": 250,
+  "min_confidence": 0.3,
+  "max_roll_deg": 60.0,
+  "min_ground_speed_ft_s": 0.0
+}
