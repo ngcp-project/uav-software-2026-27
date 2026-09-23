@@ -4,14 +4,13 @@ import time
 from copy import deepcopy
 from pathlib import Path
 
-#This json file is meant to hold things that the flight controller reports and that our scripts AND what GCS needs.
-# So this telemetry_state.json would be parsed by some sort of GCS adapter as well as by main_controller for the flight mode
+# This holds the localization result produced by the localization subsystem.
+# This is current state, not historical unless we want it to be
+# It is meant for the GCS adapter who reads this state
 
-#This would be constantly being replaced and is different from telemetry.jsonl which is more historical and used by fusion_logger / localization team
 STATE_FILE = Path(__file__).resolve().parent / "localization_state.json"
 
 DEFAULTS = {
-    "timestamp": None,
 
     "patient": {
         "patient_found": False,
@@ -52,7 +51,7 @@ def load_state() -> dict:
             time.sleep(0.05)
 
     raise RuntimeError(
-        f"Could not read valid telemetry_state.json: {last_error}"
+        f"Could not read valid localization_state.json: {last_error}"
     )
 
 
