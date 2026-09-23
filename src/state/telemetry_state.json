@@ -1,1 +1,20 @@
-{}
+{
+    "flight_controller": {
+        "connected": false,
+        "last_heartbeat": null,
+        "mode": null,
+        "armed": false
+    },
+    "position": {
+        "latitude": null,
+        "longitude": null,
+        "relative_altitude_m": null,
+        "absolute_altitude_m": null,
+        "last_updated": null
+    },
+    "battery": {
+        "voltage_v": null,
+        "remaining_percent": null,
+        "last_updated": null
+    }
+}

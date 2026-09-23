@@ -1,1 +1,8 @@
-{}
+{
+    "patient": {
+        "patient_found": false,
+        "patient_lat": null,
+        "patient_lon": null,
+        "last_updated": null
+    }
+}
