@@ -87,8 +87,7 @@ def update_section(section: str, updates: dict) -> None:
     if not isinstance(current, dict):
         current = {}
 
-    state[section] = 
-    {
+    state[section] = {
         **current,
         **updates
     }
