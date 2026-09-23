@@ -1,5 +1,4 @@
 import json
-import os
 import time
 from copy import deepcopy
 from pathlib import Path
@@ -11,8 +10,6 @@ from pathlib import Path
 STATE_FILE = Path(__file__).resolve().parent / "telemetry_state.json"
 
 DEFAULTS = {
-    "timestamp": None,
-
     "flight_controller": {
         "connected": False,
         "last_heartbeat": None,
@@ -25,11 +22,13 @@ DEFAULTS = {
         "longitude": None,
         "relative_altitude_m": None,
         "absolute_altitude_m": None,
+        "last_updated": None,
     },
 
     "battery": {
         "voltage_v": None,
         "remaining_percent": None,
+        "last_updated": None,
     },
 }
 
