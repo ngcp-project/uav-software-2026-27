@@ -1,0 +1,6 @@
+{
+    "qgroundcontrol": "udp:127.0.0.1:14550",
+    "telemetry_logger": "udp:127.0.0.1:14602",
+    "fc_listener": "udp:127.0.0.1:14608",
+    "gcs_adapter": "udp:127.0.0.1:14601"
+}
