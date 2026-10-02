@@ -1,0 +1,18 @@
+{
+  "autonomy_active": false,
+  "active_task": "search_pattern",
+  "target_waypoint": {
+    "lat": 34.0432,
+    "lon": -117.8144,
+    "alt_ft": 200.0
+  },
+  "safety_hold": null,
+  "rtl_reason": null,
+  "mission_status": {
+    "active_plan_id": null,
+    "last_completed_plan_id": null,
+    "mission_count": 0,
+    "current_mode": null,
+    "active_waypoint_index": null
+  }
+}
