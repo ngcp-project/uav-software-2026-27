@@ -1,0 +1,42 @@
+{
+  "logging_enabled": true,
+  "last_command": null,
+  "timestamp": null,
+  "last_sender_sysid": null,
+  "last_sender_compid": null,
+  "autonomy_command": false,
+  "kraken_log": "/home/lensaki/Projects/ngcp-uav-software/logs/kraken/doa_20260801_144502.jsonl",
+  "telemetry_log": "/home/lensaki/Projects/ngcp-uav-software/logs/telemetry/telemetry_20260801_144501_20260801_144502.jsonl",
+  "fusion_log": "/home/lensaki/Projects/ngcp-uav-software/logs/fusion/fusion_20260801_144502.jsonl",
+  "controller_status": {
+    "fc_mode": "MANUAL",
+    "autonomy_active": false,
+    "autonomy_source": null,
+    "rtl_reason": null,
+    "fc_mode_last_updated": 1785620739.4439802,
+    "safety_hold": "pilot_override",
+    "last_heartbeat_utc": "2026-08-01T21:45:39Z",
+    "last_rtl_event": {
+      "reason": null,
+      "source": null,
+      "timestamp": null,
+      "fc_mode": null,
+      "previous_fc_mode": null
+    },
+    "fc_mode_source": "pixhawk_heartbeat"
+  },
+  "pending_action": null,
+  "rtl_requested": false,
+  "loiter_requested": false,
+  "mission_status": {
+    "active_plan_id": 1,
+    "last_completed_plan_id": null,
+    "mission_count": 0,
+    "current_mode": "MissionUploaded",
+    "active_waypoint_index": null
+  },
+  "send_searcharea_to_nav": false,
+  "send_loiter_target_to_nav": false,
+  "send_target_location_to_nav": false,
+  "clear_nav_updates": false
+}

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=telemetry autostarting
+WorkingDirectory=/home/ngcp25/Projects/ngcp-uav-software/src/
+Exec=gnome-terminal -- bash -ic "sleep 10; python3 /home/ngcp25/Projects/ngcp-uav-software/src/loggers/telemetry_logger.py; exec bash"
+X-GNOME-Autostart-enabled=true

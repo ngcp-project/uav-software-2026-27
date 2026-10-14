@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Exec=bash -c "sleep 10 && xdg-open http://0.0.0.0:8080"
+Terminal=false
+Name=Kraken Autostart Script
+X-GNOME-Autostart-enabled=true

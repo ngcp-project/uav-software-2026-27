@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=NGCP UAV Autostart
+Comment=Unified launcher for NGCP software autostarting on Pi
+Exec=bash /home/ngcp25/ngcp-autostart.sh
+Terminal=false
+X-GNOME-Autostart-enabled=true

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=command listener autostart
+WorkingDirectory=/home/ngcp25/Projects/ngcp-uav-software/src/
+Exec=gnome-terminal -- bash -ic "sleep 5; python3 /home/ngcp25/Projects/ngcp-uav-software/src/comms/command_listener.py; exec bash"
+X-GNOME-Autostart-enabled=true
+
