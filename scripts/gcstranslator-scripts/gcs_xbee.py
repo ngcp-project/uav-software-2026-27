@@ -21,23 +21,25 @@ def command_thread():
     """
     Receives commands from GCS/XBee and forwards them to the adapter.
     """
-
-    # Receives commands from simulated GCS
-    gcs_socket = context.socket(zmq.PULL)
-    gcs_socket.bind(f"tcp://127.0.0.1:{GCS_INPUT_PORT}")
-
-    # Sends commands to the adapter
-    adapter_socket = context.socket(zmq.PUSH)
-    adapter_socket.connect(
-        f"tcp://127.0.0.1:{ADAPTER_COMMAND_PORT}"
-    )
-
-    poller = zmq.Poller()
-    poller.register(gcs_socket, zmq.POLLIN)
-
-    print(f"[Gateway] Listening for GCS commands on port {GCS_INPUT_PORT}")
+    gcs_socket = None
+    adapter_socket = None
 
     try:
+        # Receives commands from simulated GCS
+        gcs_socket = context.socket(zmq.PULL)
+        gcs_socket.bind(f"tcp://127.0.0.1:{GCS_INPUT_PORT}")
+
+        # Sends commands to the adapter
+        adapter_socket = context.socket(zmq.PUSH)
+        adapter_socket.connect(
+            f"tcp://127.0.0.1:{ADAPTER_COMMAND_PORT}"
+        )
+
+        poller = zmq.Poller()
+        poller.register(gcs_socket, zmq.POLLIN)
+
+        print(f"[Gateway] Listening for GCS commands on port {GCS_INPUT_PORT}")
+
         while not stop_event.is_set():
             events = dict(poller.poll(500))
 
@@ -48,39 +50,51 @@ def command_thread():
                 print(command)
 
                 # Forward the command unchanged to the adapter
-                adapter_socket.send_json(command)
+                try:
+                    adapter_socket.send_json(command, flags=zmq.NOBLOCK)
+                    print("[Gateway] Forwarded command to adapter")
+                except zmq.Again:
+                    print("[Gateway] Adapter not reachable, command dropped")
 
-                print("[Gateway] Forwarded command to adapter")
+    except Exception as e:
+        # NEW: without this, the thread dies quietly and the gateway
+        # keeps running with one direction dead.
+        print(f"[Gateway] COMMAND thread crashed: {e!r}")
+        stop_event.set()
 
     finally:
-        gcs_socket.close(linger=0)
-        adapter_socket.close(linger=0)
+        if gcs_socket is not None:
+            gcs_socket.close(linger=0)
+        if adapter_socket is not None:
+            adapter_socket.close(linger=0)
 
 
 def telemetry_thread():
     """
     Receives telemetry from the adapter and sends it to GCS/XBee.
     """
-
-    # Receives telemetry from adapter
-    adapter_socket = context.socket(zmq.PULL)
-    adapter_socket.connect(
-        f"tcp://127.0.0.1:{ADAPTER_TELEMETRY_PORT}"
-    )
-
-    # Sends telemetry to simulated GCS
-    gcs_socket = context.socket(zmq.PUSH)
-    gcs_socket.bind(f"tcp://127.0.0.1:{GCS_OUTPUT_PORT}")
-
-    poller = zmq.Poller()
-    poller.register(adapter_socket, zmq.POLLIN)
-
-    print(
-        f"[Gateway] Listening for adapter telemetry on "
-        f"port {ADAPTER_TELEMETRY_PORT}"
-    )
+    adapter_socket = None
+    gcs_socket = None
 
     try:
+        # Receives telemetry from adapter
+        adapter_socket = context.socket(zmq.PULL)
+        adapter_socket.connect(
+            f"tcp://127.0.0.1:{ADAPTER_TELEMETRY_PORT}"
+        )
+
+        # Sends telemetry to simulated GCS
+        gcs_socket = context.socket(zmq.PUSH)
+        gcs_socket.bind(f"tcp://127.0.0.1:{GCS_OUTPUT_PORT}")
+
+        poller = zmq.Poller()
+        poller.register(adapter_socket, zmq.POLLIN)
+
+        print(
+            f"[Gateway] Listening for adapter telemetry on "
+            f"port {ADAPTER_TELEMETRY_PORT}"
+        )
+
         while not stop_event.is_set():
             events = dict(poller.poll(500))
 
@@ -93,13 +107,24 @@ def telemetry_thread():
                 # Temporary simulated XBee send
                 # Later, replace this with:
                 # xbee.send(telemetry)
-                gcs_socket.send_json(telemetry)
+                try:
+                    # NEW: NOBLOCK. If the GCS is not connected, drop this
+                    # message instead of freezing (a frozen thread can't
+                    # be stopped, so Ctrl+C would hang).
+                    gcs_socket.send_json(telemetry, flags=zmq.NOBLOCK)
+                    print("[Gateway] Sent telemetry to GCS/XBee")
+                except zmq.Again:
+                    print("[Gateway] GCS not listening, telemetry dropped")
 
-                print("[Gateway] Sent telemetry to GCS/XBee")
+    except Exception as e:
+        print(f"[Gateway] TELEMETRY thread crashed: {e!r}")
+        stop_event.set()
 
     finally:
-        adapter_socket.close(linger=0)
-        gcs_socket.close(linger=0)
+        if adapter_socket is not None:
+            adapter_socket.close(linger=0)
+        if gcs_socket is not None:
+            gcs_socket.close(linger=0)
 
 
 def main():
@@ -119,18 +144,19 @@ def main():
     print("[Gateway] Running. Press Ctrl+C to stop.")
 
     try:
-        while True:
+        # NEW: stops on Ctrl+C OR when a thread crashes
+        while not stop_event.is_set():
             time.sleep(1)
 
     except KeyboardInterrupt:
         print("\n[Gateway] Shutting down...")
         stop_event.set()
 
-        command_worker.join()
-        telemetry_worker.join()
+    command_worker.join()
+    telemetry_worker.join()
 
-        context.term()
-        print("[Gateway] Stopped.")
+    context.term()
+    print("[Gateway] Stopped.")
 
 
 if __name__ == "__main__":
