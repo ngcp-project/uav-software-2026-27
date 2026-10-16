@@ -36,7 +36,9 @@ def main():
         # HEARTBEAT
         if msg_type == "HEARTBEAT":
 
-            mode = mavutil.mode_string_v10(msg)
+            master.flightmode = mavutil.mode_string_v10(msg)
+            mode = master.flightmode
+
 
             armed = bool(
                 msg.base_mode
