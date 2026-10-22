@@ -7,6 +7,7 @@ import sys
 # Allow import of state utils
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from state.telemetry_state_utils import update_section
+from lia.lia_client import LiaClient
 
 CONFIG_FILE = (
     Path(__file__).resolve().parents[1]
@@ -25,6 +26,13 @@ def main():
 
     master.wait_heartbeat()
     print("[FC Listener] Heartbeat received. Connected to FC.")
+    lia = LiaClient("fc_listener")
+
+    def publish(topic, value):
+        try:
+            lia.publish(topic, value)
+        except OSError as exc:
+            print(f"[FC Listener] LIA unavailable for {topic}: {exc}")
 
     while True:
         msg = master.recv_match(blocking=True)
@@ -51,6 +59,9 @@ def main():
                 "armed": armed,
                 "last_heartbeat": time.time()
             })
+            publish("telemetry.fc_mode", mode)
+            publish("telemetry.armed", armed)
+            publish("fc_listener.heartbeat", time.time())
 
         # POSITION / ALTITUDE
         elif msg_type == "GLOBAL_POSITION_INT":
@@ -61,6 +72,13 @@ def main():
                 "absolute_altitude_m": msg.alt / 1000.0,
                 "relative_altitude_m": msg.relative_alt / 1000.0,
                 "last_updated": time.time()
+            })
+            publish("telemetry.position", {
+                "latitude": msg.lat / 1e7,
+                "longitude": msg.lon / 1e7,
+                "absolute_altitude_m": msg.alt / 1000.0,
+                "relative_altitude_m": msg.relative_alt / 1000.0,
+                "last_updated": time.time(),
             })
 
         # BATTERY
@@ -82,6 +100,11 @@ def main():
                 "voltage_v": voltage,
                 "remaining_percent": remaining,
                 "last_updated": time.time()
+            })
+            publish("telemetry.battery", {
+                "voltage_v": voltage,
+                "remaining_percent": remaining,
+                "last_updated": time.time(),
             })
 
 

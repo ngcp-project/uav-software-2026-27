@@ -1,20 +1,20 @@
 {
-    "flight_controller": {
-        "connected": false,
-        "last_heartbeat": null,
-        "mode": null,
-        "armed": false
-    },
-    "position": {
-        "latitude": null,
-        "longitude": null,
-        "relative_altitude_m": null,
-        "absolute_altitude_m": null,
-        "last_updated": null
-    },
-    "battery": {
-        "voltage_v": null,
-        "remaining_percent": null,
-        "last_updated": null
-    }
+  "flight_controller": {
+    "connected": true,
+    "last_heartbeat": 1790962968.0120213,
+    "mode": "AUTOLAND",
+    "armed": false
+  },
+  "position": {
+    "latitude": 33.9361995,
+    "longitude": -117.6351652,
+    "relative_altitude_m": -0.151,
+    "absolute_altitude_m": 99.92,
+    "last_updated": 1790962968.8174171
+  },
+  "battery": {
+    "voltage_v": 12.6,
+    "remaining_percent": 78,
+    "last_updated": 1790962968.5148737
+  }
 }

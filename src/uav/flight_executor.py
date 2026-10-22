@@ -1,13 +1,19 @@
-
+import json
 import logging
 from enum import Enum
 from pymavlink import mavutil
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
 #References
 FT_TO_M = 0.3048
 LOITER_ALT_FT = 200
+LOITER_RADIUS_FT = 165
+
+MISSION_DIR = Path(__file__).resolve().parents[1] / "missions"
+with open(MISSION_DIR / "test_mission.json") as f:
+    plan = json.load(f)
 
 class ExecutorStatus(str, Enum):
     IDLE = "IDLE"
@@ -65,6 +71,38 @@ class FlightExecutor:
                 if self.pending_plan else None
             ),
         }
+
+
+    def submit_plan(self, plan: dict) -> str:
+
+        if not isinstance(plan, dict):
+            raise TypeError("MissionPlan must be a dictionary")
+
+        if not plan.get("plan_id"):
+            raise ValueError("MissionPlan missing plan_id")
+
+        if plan.get("plan_type") not in (
+            "waypoint_pattern",
+            "single_loiter",
+        ):
+            raise ValueError("Unsupported plan_type")
+
+        if not isinstance(plan.get("waypoints"), list):
+            raise ValueError("MissionPlan waypoints must be a list")
+
+        if not plan["waypoints"]:
+            raise ValueError("MissionPlan has no waypoints")
+
+        # Store proposed mission.
+        self.pending_plan = plan.copy()
+
+        log.info(
+            "[FLIGHT EXECUTOR] Received MissionPlan: %s",
+            plan["plan_id"],
+        )
+
+        return plan["plan_id"]
+
 
     #Uses the function build_waypoint_items to convert a plan into MAVLink mission items, then uploads them to the autopilot.
     def upload_plan(self, plan):
