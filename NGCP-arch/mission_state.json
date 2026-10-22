@@ -1,0 +1,12 @@
+{
+  "meta": {
+    "mission_phase": "searching",
+    "abort_latch": false,
+    "last_updated": {
+      "atm": 1789763078.25895,
+      "fcl": null,
+      "gcs": null,
+      "lcl": 1789763084.014467
+    }
+  }
+}
