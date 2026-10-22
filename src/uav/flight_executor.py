@@ -11,10 +11,6 @@ FT_TO_M = 0.3048
 LOITER_ALT_FT = 200
 LOITER_RADIUS_FT = 165
 
-MISSION_DIR = Path(__file__).resolve().parents[1] / "missions"
-with open(MISSION_DIR / "test_mission.json") as f:
-    plan = json.load(f)
-
 class ExecutorStatus(str, Enum):
     IDLE = "IDLE"
     UPLOADING = "UPLOADING"
