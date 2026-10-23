@@ -118,10 +118,40 @@ def loiter(vehicle, lat, lon, alt_ft):
     # above the survivor location
     # ==========================================================
 
+    
+    loiter_plan = {
+        "plan_id": "loiter_001",
+        "plan_type": "loiter",
+        "waypoints": [
+            {
+                "lat": lat,
+                "lon": lon,
+                "alt_ft": alt_ft,
+            }
+        ],
+        "loiter_radius_ft": 50.0,  # Example radius for loitering
+    }
 # if condition to loiter is met, execute loiter function,
 # if not, transition to the mission 3
 
 
+def run_mission2():
+    print("[AUTONOMY] Starting Mission 2: Expanding Square Flight Pattern")
+    
+    plan = {
+        "plan_id": "search_002",
+        "plan_type": "waypoint_pattern",
+        "label": "Expanding Square Search Pattern",
+        "waypoints": [
+            {
+                "lat": CENTER_LAT,
+                "lon": CENTER_LON,
+                "alt_ft": CRUISE_ALT_FT,
+            }
+        ]
+    }
+    
+
+
 if __name__ == "__main__":
-    plan = generate_plan()
-    publish_plan(plan)
+    run_mission2()
