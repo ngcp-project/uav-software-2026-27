@@ -1,16 +1,21 @@
 """
-Reusable client-side interface for the local LIA broker.
+Client interface for communicating with the lia.py broker.
 
-The client owns the common socket and newline-delimited JSON details so
-subsystems only need to provide a sender, topic, and value.
+This module handles the socket connection and JSON message formatting so
+other subsystems do not need to manage those details themselves.
+
+Subsystems only need to provide:
+- a sender name
+- a topic
+- a value
 
 Supported operations:
-    publish()   → send a durable state publication or transient command
-    subscribe() → receive live broadcasts with optional reconnects
-    shutdown()  → request a broker-wide shutdown
+publish()   -> send state updates or commands through LIA
+subscribe() -> listen for messages published through LIA
+shutdown()  -> request a clean shutdown of the LIA broker
 
-This is intentionally not an RPC or ACK layer. Commands remain transient;
-explicit acknowledgement can be added later for commands that require it.
+Commands are sent as normal LIA messages. This client does not automatically
+wait for acknowledgements unless that behavior is implemented by the subsystem.
 """
 
 from __future__ import annotations
