@@ -1,29 +1,46 @@
 #!/usr/bin/env python3
 """
-LIA broker —  pub/sub message router with durable state persistence.
+LIA broker for communication between onboard software processes.
+
+LIA receives messages from subsystems, broadcasts them to subscribers,
+and saves persistent state updates to the appropriate JSON state file.
 
 State files:
-    telemetry_state.json    ← aircraft truth: FC mode, position, battery, etc.
-    navigation_state.json   ← autonomy-facing destination and plan state
-    mission_state.json      ← mission/controller state
-    localization_state.json ← human-facing localization result/debug state
-    heartbeats.json         ← last heartbeat timestamp per producer
 
-Topic routing rules:
-    telemetry.*     → telemetry_state.json
-    nav.*           → navigation_state.json
-    mission.*       → mission_state.json
-    localization.* → localization_state.json
-    *.heartbeat     → heartbeats.json
-    cmd.*           → transient, broadcast only
+telemetry_state.json
+    Current aircraft data such as flight mode, position, and battery.
 
-Durable publications are broadcast immediately and persisted separately.
-High-rate state may be throttled for disk writes, while commands remain
-transient and are never written to a command JSON file.
+navigation_state.json
+    Navigation data used by autonomy, including destinations and plans.
+
+mission_state.json
+    Current mission and controller status.
+
+localization_state.json
+    Localization results used for GCS display, logging, and debugging.
+
+heartbeats.json
+    Latest heartbeat timestamp from each running subsystem.
+
+Topic routing:
+telemetry.*     -> telemetry_state.json
+nav.*           -> navigation_state.json
+mission.*       -> mission_state.json
+localization.*  -> localization_state.json
+.heartbeat     -> heartbeats.json
+cmd.           -> broadcast only; not saved to a state file
+
+All published messages are broadcast to subscribers immediately.
+
+Persistent state messages are also written to their corresponding JSON file.
+High-rate data such as telemetry may be written to disk less frequently to
+reduce unnecessary file writes while still being broadcast live.
+
+Commands are temporary messages and are not stored as persistent state.
 
 Shutdown:
-    A client sends {"type": "shutdown"} → LIA broadcasts {"type": "shutdown"}
-    to all subscribers then exits. Subscribers should exit instead of retrying.
+When a client sends a shutdown request, LIA broadcasts the shutdown message
+to all subscribers and then stops the broker.
 """
 
 from __future__ import annotations
