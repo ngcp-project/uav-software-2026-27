@@ -38,6 +38,13 @@ HOST, PORT = "127.0.0.1", 5588
 ROOT_DIR = Path(__file__).resolve().parents[1]
 STATE_DIR = ROOT_DIR / "state"
 
+QUIET_TOPICS = {
+    "telemetry.position",
+    "telemetry.battery",
+    "telemetry.fc_mode",
+    "telemetry.armed",
+}
+QUIET_SUFFIXES = {".heartbeat"}
 
 
 STATE_FILES = {
@@ -177,7 +184,15 @@ class LiaHandler(socketserver.StreamRequestHandler):
                 status = "persisted" if persisted else (
                     "throttled" if durable else "transient"
                 )
-                print(f"[LIA] {msg.get('sender', '?')} -> {topic} ({status})")
+                should_log = (
+                    topic not in QUIET_TOPICS
+                    and not any(topic.endswith(suffix) for suffix in QUIET_SUFFIXES)
+                )
+                if should_log:
+                    print(
+                        f"[LIA] {msg.get('sender', '?')} -> "
+                        f"{topic} ({status})"
+                    )
                 broadcast({
                     "topic": topic,
                     "value": msg.get("value"),

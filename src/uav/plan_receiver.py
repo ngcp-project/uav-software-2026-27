@@ -1,10 +1,15 @@
 import logging
+from pathlib import Path
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from lia.lia_client import LiaClient
 
 log = logging.getLogger(__name__)
 
-def listen_for_plans(executor):
+def listen_for_messages(executor):
 
     processed_commands = {}
 
@@ -16,10 +21,16 @@ def listen_for_plans(executor):
             print("[FLIGHT EXECUTOR] LIA shutting down")
             break
 
-        if message.get("topic") != "cmd.submit_plan":
+        topic = message.get("topic")
+        value = message.get("value")
+
+        if topic == "telemetry.fc_mode":
+            if isinstance(value, str):
+                executor.update_flight_mode(value)
             continue
 
-        value = message.get("value", {})
+        if topic != "cmd.submit_plan":
+            continue
 
         if not isinstance(value, dict):
             log.warning("Invalid command payload")
