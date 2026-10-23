@@ -1,3 +1,8 @@
+from Packet.Command import *
+from Packet.Enum import *
+from Packet.Infrastructure.InfrastructureInterface import *
+from PacketLibrary.PacketLibrary import PacketLibrary
+from Telemetry.Telemetry import Telemetry
 import time
 import zmq
 
@@ -19,8 +24,28 @@ try:
     while True:
         # Wait up to 50 ms for a command, then move on
         if command_socket.poll(50):
-            command = command_socket.recv_json()
-            print("Received command:", command)
+            Command = command_socket.recv_pyobj()
+            print("Received command:", Command)
+
+            try:
+                if (isinstance(Command, str)):
+                    CommandData = json.loads(Command)
+
+                match (Command):
+                    case Heartbeat():
+                        print("Executing Heartbeat code")
+                    case EmergencyStop():
+                        print("Executing Emergency Stop code")
+                    case AddZone():
+                        print("Executing Add Zone code")
+                    case PatientLocation():
+                        print("Executing Patient Location code")
+                    case _:
+                        print("Unknown Command Type")
+
+            except json.JSONDecodeError as e:
+                print(f"JSON Error: {e}")
+                        
 
         # Send telemetry 5 times a second, whether or not a command arrived
         if time.time() - last_sent >= 0.2:
