@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LIA broker — semantic pub/sub message router with durable state persistence.
+LIA broker —  pub/sub message router with durable state persistence.
 
 State files:
     telemetry_state.json    ← aircraft truth: FC mode, position, battery, etc.
@@ -101,20 +101,17 @@ def persist(topic: str, value) -> bool:
     # Throttle by semantic state category rather than by individual topic.
     persist_namespace = "heartbeat" if is_heartbeat else namespace
     limit = PERSIST_THROTTLE_S.get(persist_namespace)
-    with _lock:
-        if limit and now - _last_persist_time.get(persist_namespace, 0.0) < limit:
-            return False
-        if limit:
-            _last_persist_time[persist_namespace] = now
 
-        path = STATE_FILES["heartbeat"] if is_heartbeat else STATE_FILES[namespace]
-        state = load_file(path)
-        if is_heartbeat:
-            state[namespace] = value
-        else:
-            _set_nested(state, field, value)
-        save_file(state, path)
-        return True
+    # Heartbeats can share a heartbeat rate, but semantic state should
+    # throttle independently by topic.
+    throttle_key = persist_namespace if is_heartbeat else topic
+
+    with _lock:
+        if limit and now - _last_persist_time.get(throttle_key, 0.0) < limit:
+            return False
+
+        if limit:
+            _last_persist_time[throttle_key] = now
 
 
 # ── broadcast ─────────────────────────────────────────────────────────────────

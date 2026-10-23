@@ -38,6 +38,7 @@ def listen_for_plans(executor):
         else:
             try:
                 plan_id = executor.submit_plan(plan)
+                executor.upload_pending_plan()
                 ack = {"command_id": command_id, "plan_id": plan_id, "status": "accepted"}
             except (TypeError, ValueError) as exc:
                 ack = {

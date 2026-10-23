@@ -99,6 +99,18 @@ class FlightExecutor:
 
         return plan["plan_id"]
 
+    def submit_plan(self, plan: dict) -> str:
+        self._validate_plan(plan)
+
+        self.pending_plan = plan.copy()
+
+        log.info(
+            "[FLIGHT EXECUTOR] Pending MissionPlan: %s",
+            plan["plan_id"],
+        )
+
+        return plan["plan_id"]
+
 
     #Uses the function build_waypoint_items to convert a plan into MAVLink mission items, then uploads them to the autopilot.
     def upload_plan(self, plan):
@@ -143,6 +155,18 @@ class FlightExecutor:
             "Mission %s accepted by ArduPilot",
             plan["plan_id"]
         )
+
+    def upload_pending_plan(self):
+        if self.pending_plan is None:
+            raise RuntimeError("No pending plan to upload")
+
+        plan = self.pending_plan
+
+        self.upload_plan(plan)
+
+        self.pending_plan = None
+
+        return plan["plan_id"]
 
 
 #Translates a waypoint pattern plan into a list of MAVLink mission items.
