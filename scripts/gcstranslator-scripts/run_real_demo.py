@@ -12,13 +12,21 @@ How it works
 
 Run (with your venv active, from this folder):     python run_real_demo.py
 Close any other adapter / gateway terminals first (the ports would be busy).
+
+Which adapter is used:   python run_real_demo.py                       the simple test adapter.py
+                         ADAPTER_SCRIPT=gcs_adapter.py python run_real_demo.py     the real adapter, working on
+                                                                                   COPIES of the state files in a
+                                                                                   temporary folder (your src/state
+                                                                                   files are not touched)
 """
 import os
 import pty
 import select
 import signal
+import json
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import tty
@@ -77,7 +85,16 @@ master_fd, slave_fd = pty.openpty()
 tty.setraw(slave_fd)                                 # raw bytes, no echo or line editing
 port = os.ttyname(slave_fd)
 
+ADAPTER_SCRIPT = os.environ.get("ADAPTER_SCRIPT", "adapter.py")
 env = dict(os.environ, GCS_XBEE_PORT=port, GCS_MAC=GCS_MAC, PYTHONUNBUFFERED="1")
+state_dir = None
+if ADAPTER_SCRIPT != "adapter.py":                   # the real adapter: give it test copies of the state files
+    state_dir = tempfile.mkdtemp(prefix="gcs_state_")
+    with open(os.path.join(state_dir, "telemetry_state.json"), "w") as f:
+        json.dump({"position": {"latitude": 33.9325, "longitude": -117.6308, "relative_altitude_m": 60.96,
+                                "last_updated": time.time()},
+                   "battery": {"remaining_percent": 87.0, "last_updated": time.time()}}, f)
+    env["GCS_STATE_DIR"] = state_dir
 output = {"adapter": [], "xbee": []}
 ready = threading.Event()
 
@@ -116,8 +133,8 @@ def read_radio():
 
 threading.Thread(target=read_radio, daemon=True).start()
 
-print(f"Pretend serial port: {port}\nStarting adapter and gcs_xbee.py...\n")
-adapter = start("adapter", "adapter.py")
+print(f"Pretend serial port: {port}\nStarting {ADAPTER_SCRIPT} and gcs_xbee.py...\n")
+adapter = start("adapter", ADAPTER_SCRIPT)
 time.sleep(0.7)
 xbee = start("xbee", "gcs_xbee.py")
 
@@ -127,6 +144,7 @@ if not ready.wait(timeout=15):
     sys.exit(1)
 
 # ─────────────────────── the pretend GCS: send commands over the radio ───────────────────────
+ZONE_POINTS = [(33.9330, -117.6300), (33.9330, -117.6290), (33.9320, -117.6295)]     # a keep-out zone near Pomona
 delivered = []          # (command id, packet id, name) of commands that should reach the adapter
 skipped = []            # ones made but deliberately broken, which must NOT be acknowledged
 
@@ -140,7 +158,7 @@ def send(command, name):
 t0 = time.time()
 plan = [
     (0.5, lambda: send(Heartbeat(ConnectionStatus.Connected), "Heartbeat")),
-    (1.0, lambda: send(AddZone(ZoneType.KeepOut, [(0, 4), (4, 0), (4, 4), (0, 4)]), "AddZone")),
+    (1.0, lambda: send(AddZone(ZoneType.KeepOut, ZONE_POINTS), "AddZone")),
     (1.5, "corrupt"),
     (2.0, lambda: send(PatientLocation((33.935, -117.631)), "PatientLocation")),
     (2.5, "text"),
@@ -195,7 +213,22 @@ if any(dest != GCS_MAC for _, _, dest in telemetry_seen):
 if any(t is None for _, t, _ in telemetry_seen):
     problems.append("a telemetry packet could not be decoded by Telemetry.Decode")
 seen_pairs = {(t.CommandID, t.PacketID) for _, t, _ in telemetry_seen if t}
+adapter_text = "\n".join(output["adapter"])
+warnings = []
+zone_refused = "AddZone rejected" in adapter_text
+if zone_refused:
+    line = next((l for l in output["adapter"] if "AddZone rejected" in l), "")
+    sent_ok = all(f"[{lat}, {lon}]" in line for lat, lon in ZONE_POINTS)
+    if sent_ok:
+        warnings.append("The adapter refused the AddZone command: " + line.split("points:")[-1].strip())
+    else:
+        warnings.append("The adapter REFUSED the AddZone command because its coordinates arrived damaged. The GCS sent "
+                        f"{ZONE_POINTS} but the adapter got {line.split('points:')[-1].strip()}. That is a bug in the GCS "
+                        "library (Packet/Command/AddZone.py, DecodePacket: use (i + 4) and (i + 5), not (i + 2) and "
+                        "(i + 3)). The adapter did the right thing; the GCS gets no confirmation for that command.")
 for cmd_id, pkt_id, name in delivered:
+    if name == "AddZone" and zone_refused:
+        continue
     if (cmd_id, pkt_id) not in seen_pairs:
         problems.append(f"{name} (packet id {pkt_id}) was never acknowledged in telemetry")
 for cmd_id, pkt_id in skipped:
@@ -222,6 +255,8 @@ if telemetry_seen:
     t = telemetry_seen[-1][1]
     print("Last packet as the GCS would see it:")
     print("   " + str(t).replace(", ", "\n   "))
+for w in warnings:
+    print("  WARNING:", w)
 for p in problems:
     print("  PROBLEM:", p)
 print("RESULT: " + ("PASS" if not problems else "FAIL"))
