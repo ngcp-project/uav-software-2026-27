@@ -43,8 +43,24 @@ def listen_for_plans(executor):
             except (TypeError, ValueError) as exc:
                 ack = {
                     "command_id": command_id,
-                    "plan_id": plan.get("plan_id") if isinstance(plan, dict) else None,
+                    "plan_id": (
+                        plan.get("plan_id")
+                        if isinstance(plan, dict)
+                        else None
+                    ),
                     "status": "rejected",
+                    "reason": str(exc),
+                }
+
+            except (RuntimeError, TimeoutError) as exc:
+                ack = {
+                    "command_id": command_id,
+                    "plan_id": (
+                        plan.get("plan_id")
+                        if isinstance(plan, dict)
+                        else None
+                    ),
+                    "status": "upload_failed",
                     "reason": str(exc),
                 }
             processed_commands[command_id] = ack

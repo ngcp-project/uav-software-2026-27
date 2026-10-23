@@ -1,8 +1,6 @@
-import json
 import logging
 from enum import Enum
 from pymavlink import mavutil
-from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -68,9 +66,7 @@ class FlightExecutor:
             ),
         }
 
-
-    def submit_plan(self, plan: dict) -> str:
-
+    def _validate_plan(self, plan: dict) -> None:
         if not isinstance(plan, dict):
             raise TypeError("MissionPlan must be a dictionary")
 
@@ -83,21 +79,14 @@ class FlightExecutor:
         ):
             raise ValueError("Unsupported plan_type")
 
-        if not isinstance(plan.get("waypoints"), list):
+        waypoints = plan.get("waypoints")
+
+        if not isinstance(waypoints, list):
             raise ValueError("MissionPlan waypoints must be a list")
 
-        if not plan["waypoints"]:
+        if not waypoints:
             raise ValueError("MissionPlan has no waypoints")
 
-        # Store proposed mission.
-        self.pending_plan = plan.copy()
-
-        log.info(
-            "[FLIGHT EXECUTOR] Received MissionPlan: %s",
-            plan["plan_id"],
-        )
-
-        return plan["plan_id"]
 
     def submit_plan(self, plan: dict) -> str:
         self._validate_plan(plan)
@@ -110,6 +99,9 @@ class FlightExecutor:
         )
 
         return plan["plan_id"]
+
+
+    
 
 
     #Uses the function build_waypoint_items to convert a plan into MAVLink mission items, then uploads them to the autopilot.

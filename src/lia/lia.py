@@ -38,6 +38,8 @@ HOST, PORT = "127.0.0.1", 5588
 ROOT_DIR = Path(__file__).resolve().parents[1]
 STATE_DIR = ROOT_DIR / "state"
 
+
+
 STATE_FILES = {
     "telemetry": STATE_DIR / "telemetry_state.json",
     "nav": STATE_DIR / "navigation_state.json",
@@ -112,6 +114,17 @@ def persist(topic: str, value) -> bool:
 
         if limit:
             _last_persist_time[throttle_key] = now
+
+        path = STATE_FILES["heartbeat"] if is_heartbeat else STATE_FILES[namespace]
+        state = load_file(path)
+
+        if is_heartbeat:
+            state[namespace] = value
+        else:
+            _set_nested(state, field, value)
+
+        save_file(state, path)
+        return True
 
 
 # ── broadcast ─────────────────────────────────────────────────────────────────
