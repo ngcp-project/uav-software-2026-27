@@ -11,14 +11,8 @@ from pathlib import Path
 STATE_FILE = Path(__file__).resolve().parent / "localization_state.json"
 
 DEFAULTS = {
-
-    "patient": {
-        "patient_found": False,
-        "patient_lat": None,
-        "patient_lon": None,
-        "last_updated": None,
-    },
-
+    "status": "waiting",
+    "estimated_target": None,
 }
 
 
