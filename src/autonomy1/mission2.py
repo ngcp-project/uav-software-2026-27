@@ -1,10 +1,12 @@
 """
 Mission 2: Expanding Square Flight Pattern
+           Inward circular spiral
+           Inward square spiral
 
 1. Aquire search area (defined by GCS) 
 NOTE: the first mission is a lawnmower pattern, and recieves the search area from GCS.
 
-2. Generate waypoints and fly the plane autonomously in expanding square pattern, once the mission 1 is completed or 
+2. Generate waypoints and fly the plane autonomously in the desired pattern, once the mission 1 is completed or 
 the location is partially determined. The transition must be autonomous (not controlled by GCS).
 
 3. Report location, altitude, heading, and detections to GCS while in pattern
@@ -63,6 +65,12 @@ def generate_waypoints():
     # ==========================================================
     # REPLACE THIS FUNCTION WITH YOUR AUTONOMY / WAYPOINT LOGIC
     # ==========================================================
+
+    # logic for all three patterns:
+    # Expanding Square
+    # Inward Circular Spiral
+    # Inward Square Spiral
+
 
     # Your autonomy logic should calculate and return:
     #
@@ -136,11 +144,16 @@ def loiter(vehicle, lat, lon, alt_ft):
 
 
 def run_mission2():
+    # change the mission to desired pattern: 
+    # Inward circular spiral, Inward square spiral, Expanding square
     print("[AUTONOMY] Starting Mission 2: Expanding Square Flight Pattern")
+    print("[AUTONOMY] Generating waypoints for the search pattern...")
     
     plan = {
         "plan_id": "search_002",
         "plan_type": "waypoint_pattern",
+        # change to desired pattern:
+        # Inward circular spiral, Inward square spiral, Expanding square
         "label": "Expanding Square Search Pattern",
         "waypoints": [
             {
@@ -150,6 +163,7 @@ def run_mission2():
             }
         ]
     }
+    
     
 
 
