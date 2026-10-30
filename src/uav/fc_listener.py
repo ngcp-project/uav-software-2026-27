@@ -54,13 +54,26 @@ def main():
 
         # POSITION / ALTITUDE
         elif msg_type == "GLOBAL_POSITION_INT":
+            horizontal_speed_mps = (
+                (msg.vx ** 2 + msg.vy ** 2) ** 0.5 / 100.0
+            )
 
             update_section("position", {
                 "latitude": msg.lat / 1e7,
                 "longitude": msg.lon / 1e7,
                 "absolute_altitude_m": msg.alt / 1000.0,
                 "relative_altitude_m": msg.relative_alt / 1000.0,
-                "last_updated": time.time()
+                "last_updated": time.time(),
+                "speed": horizontal_speed_mps,
+            })
+
+        # ATTITUDE
+        elif msg_type == "ATTITUDE":
+            update_section("position", {
+                "roll": msg.roll,
+                "pitch": msg.pitch,
+                "yaw": msg.yaw,
+                "last_updated": time.time(),
             })
 
         # BATTERY

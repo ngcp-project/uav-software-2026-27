@@ -24,6 +24,13 @@ DEFAULTS = {
         "relative_altitude_m": None,
         "absolute_altitude_m": None,
         "last_updated": None,
+        "speed": None,
+    },
+
+    "attitude": {
+        "roll": None,
+        "pitch": None,
+        "yaw": None,
     },
 
     "battery": {
