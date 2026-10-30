@@ -3,17 +3,17 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone
 
-MISSION_STATE_PATH = Path(__file__).resolve().parents[1] / "state" / "mission_state.json"
-NAV_STATE_PATH = Path(__file__).resolve().parents[1] / "state" / "navigation_state.json"
+STATE_DIR = Path(__file__).resolve().parents[1] / "src" / "state"
+MISSION_STATE_PATH = STATE_DIR / "mission_state.json"
+NAV_STATE_PATH = STATE_DIR / "navigation_state.json"
 
 #This file simulated GCS, but not really it was used so that I can wirelessly send commands or state updates to the UAV system for testing purposes
 # Works in simulation as well
 SEARCH_AREA = [
-    [33.93522446917662, -117.63276100158691],
-    [33.93509984969237, -117.62574434280396],
-    [33.93257, -117.62892],
-    [33.93246, -117.63077],
-    [33.932543303485915, -117.6321331383231]
+    [33.934000, -117.634000],
+    [33.934000, -117.630000],
+    [33.930500, -117.630000],
+    [33.930500, -117.634000],
 ]
 
 MRA_REFINED = {

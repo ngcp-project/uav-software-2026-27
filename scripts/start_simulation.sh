@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-VENV="$HOME/mavsdk-venv/bin/activate"
-PROJECT_DIR="$HOME/Projects/ngcp-uav-software"
-ARDUPILOT_DIR="$HOME/ardupilot"
-MAVLINK_ROUTER_DIR="$HOME/mavlink-router"
-QGC_APP="$HOME/Downloads/QGroundControl-x86_64.AppImage"
+VENV="${VENV:-$HOME/mavsdk-venv/bin/activate}"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ARDUPILOT_DIR="${ARDUPILOT_DIR:-$HOME/ardupilot}"
+MAVLINK_ROUTER_DIR="${MAVLINK_ROUTER_DIR:-$HOME/mavlink-router}"
+QGC_APP="${QGC_APP:-$HOME/Downloads/QGroundControl-x86_64.AppImage}"
 
 open_terminal() {
     local title="$1"
@@ -50,49 +50,63 @@ open_terminal "3 - QGroundControl" "
 
 sleep 2
 
-open_terminal "4 - Telemetry Logger" "
+open_terminal "4 - LIA broker" "
+    cd '$PROJECT_DIR'
+    python3 src/lia/lia.py
+"
+
+sleep 1
+
+open_terminal "5 - Mission plan receiver" "
+    cd '$PROJECT_DIR'
+    python3 src/uav/main.py
+"
+
+sleep 2
+
+open_terminal "6 - Telemetry Logger" "
     cd '$PROJECT_DIR'
     python3 src/loggers/telemetry_logger.py
 "
 
 sleep 1
 
-open_terminal "5 - Sim Kraken Data" "
+open_terminal "7 - Sim Kraken Data" "
     cd '$PROJECT_DIR'
     python3 src/loggers/SimKrakenData.py
 "
 
 sleep 1
 
-open_terminal "6 - Fusion Logger" "
+open_terminal "8 - Fusion Logger" "
     cd '$PROJECT_DIR'
     python3 src/loggers/fusion_logger.py
 "
 
 sleep 1
 
-open_terminal "7 - FC Mode Listener" "
+open_terminal "9 - FC Mode Listener" "
     cd '$PROJECT_DIR'
     python3 src/uav/fc_mode_listener.py
 "
 
 sleep 1
 
-open_terminal "8 - Mission 1 Waypoint Builder" "
+open_terminal "10 - Mission 1 Waypoint Builder" "
     cd '$PROJECT_DIR'
     python3 src/autonomy/mission1_waypoint.py
 "
 
 sleep 1
 
-open_terminal "9 - Main Controller" "
+open_terminal "11 - Main Controller" "
     cd '$PROJECT_DIR'
     python3 src/uav/main_controller.py
 "
 
 sleep 1
 
-open_terminal "10 - GCS Simulator" "
+open_terminal "12 - GCS Simulator" "
     cd '$PROJECT_DIR'
     python3 scripts/gcssimulator.py
 "
