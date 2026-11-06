@@ -8,10 +8,12 @@ import sys
 import json
 import math
 import time
+import uuid
 #import subprocess
 from pathlib import Path
-
 sys.path.append(str(Path(__file__).resolve().parents[1]))
+from lia.lia_client import LiaClient
+
 from state.mission_state_utils import load_state, update_state
 from state.nav_state_utils import load_nav_state as load_state_nav, update_nav_state as update_state_nav
 
@@ -125,7 +127,11 @@ def circle_clearance(cx, cy, radius_m, poly, n_samples=72):
         angle = 2 * math.pi * i / n_samples
         sx = cx + radius_m * math.cos(angle)
         sy = cy + radius_m * math.sin(angle)
-        min_d = min(min_d, min_dist_point_to_poly(sx, sy, poly))
+        d = min_dist_point_to_poly(sx, sy, poly)
+        if point_in_poly(sx, sy, poly):
+            min_d = min(min_d, d)
+        else:
+            min_d = min(min_d, -d)
     return min_d
 
 
@@ -418,6 +424,22 @@ def _teardown(nav: dict, mis: dict):
 ###############################################################################
 # Main
 ###############################################################################
+def publish_plan(plan: dict):
+    lia = LiaClient("autonomy")
+    command_id = str(uuid.uuid4())
+    lia.publish(
+        "cmd.submit_plan",
+        {
+            "command_id": command_id,
+            "plan": plan,
+        },
+    )
+    print(
+        f"[AUTONOMY] Submitted "
+        f"{plan['plan_id']} "
+        f"command_id={command_id}"
+    )
+    return command_id
 
 def run_mission_3():
     print("[MISSION 3] Starting …")
@@ -527,7 +549,9 @@ def run_mission_3():
     new_cx, new_cy, was_moved = clamp_circle_to_poly(
         orig_cx, orig_cy, loiter_radius_m, search_xy, BORDER_CLEARANCE_M
     )
-
+    circle_clearance_m = circle_clearance(new_cx, new_cy, loiter_radius_m, search_xy, LOITER_SAMPLE_PTS)
+    if circle_clearance_m < BORDER_CLEARANCE_M:
+        raise RuntimeError(f"Circle clearance {circle_clearance_m:.1f} m < required {BORDER_CLEARANCE_M:.1f} m after clamping.")
     if was_moved:
         new_lat, new_lon = from_local(new_cx, new_cy, o_lat, o_lon)
         move_m = math.hypot(new_cx - orig_cx, new_cy - orig_cy)
@@ -596,7 +620,7 @@ def run_mission_3():
 
     update_state_nav("active_plan", active_plan)
     print("[STATE] active_plan written as single_loiter and status → 'ready'")
-
+    publish_plan(active_plan)
     print("[MISSION 3] Plan is ready. Waiting for autonomy_active before manual-takeover monitoring...")
 
     while True:
