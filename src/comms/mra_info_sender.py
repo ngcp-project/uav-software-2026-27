@@ -199,7 +199,7 @@ def poll_kraken_status() -> str:
             return _cached_kraken_status
 
         fields = text.split(",")
-        # fields[2] is confidence_0_1 — None/empty during calibration
+        # fields[2] is the raw Kraken DoA PAPR metric — None/empty during calibration
         try:
             conf = float(fields[2].strip()) if len(fields) > 2 else None
         except (ValueError, IndexError):

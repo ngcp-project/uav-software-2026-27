@@ -1,6 +1,7 @@
 import argparse
 import bisect
 import json
+import math
 import time
 from pathlib import Path
 
@@ -10,7 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from state.mission_state_utils import load_state, update_state
 
 DEFAULT_MAX_TIME_DIFF_MS     = 250 #Difference in telemetry t_rx_ms and kraken t_rx_ms (Can't be over 250 cuz that means its too far apart)
-DEFAULT_MIN_CONFIDENCE       = 0.3
+DEFAULT_MIN_DOA_PAPR_DB      = 0.3  # Provisional operational threshold; this is not a probability.
 DEFAULT_MAX_ROLL_DEG         = 60.0
 DEFAULT_MIN_GROUND_SPEED_FT_S = 0.0
 
@@ -43,6 +44,24 @@ def build_timestamp_index(records: list[dict]) -> list[int]:
     return [r["t_rx_ms"] for r in records]
 
 
+def finite_number(value: object) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def get_doa_papr_db(record: dict) -> float | None:
+    """Read the corrected field, with legacy support for old fusion logs."""
+
+    value = record.get("doa_papr_db")
+    if value is None:
+        # Older logs called the raw Kraken metric confidence_0_1.
+        value = record.get("confidence_0_1")
+    return finite_number(value)
+
+
 def find_nearest(timestamps: list[int], target: int) -> int:
     n = len(timestamps)
     if n == 0:
@@ -62,28 +81,45 @@ def find_nearest(timestamps: list[int], target: int) -> int:
         return before
     return after
 
-# For triangulation to see if usable in confidence, roll, and ground speed constraints
+# For triangulation to see if usable under the PAPR, angle, position, attitude,
+# timing, and ground-speed constraints.
 def is_usable(
-    confidence_0_1: float | None,
+    doa_papr_db: float | None,
+    doa_deg: float | None,
+    lat_deg: float | None,
+    lon_deg: float | None,
     roll_deg: float | None,
     ground_speed_ft_s: float | None,
-    dt_ms: int,
+    dt_ms: int | None,
     *,
     max_time_diff_ms: int,
-    min_confidence: float,
+    min_doa_papr_db: float,
     max_roll_deg: float,
     min_ground_speed_ft_s: float,
 ) -> bool:
-    if abs(dt_ms) > max_time_diff_ms:
+    dt_value = finite_number(dt_ms)
+    if dt_value is None or abs(dt_value) > max_time_diff_ms:
         print(f"FAIL Time Difference: {dt_ms}")
         return False
-    if confidence_0_1 is None or confidence_0_1 < min_confidence:
-        print(f"FAIL Confidence: {confidence_0_1}")
+    if doa_papr_db is None or doa_papr_db < min_doa_papr_db:
+        print(f"FAIL DoA PAPR dB: {doa_papr_db}")
         return False
-    if roll_deg is None or abs(roll_deg) > max_roll_deg:
+    if doa_deg is None or not 0.0 <= doa_deg < 360.0:
+        print(f"FAIL DoA Deg: {doa_deg}")
+        return False
+    if (
+        lat_deg is None
+        or lon_deg is None
+        or not -90.0 <= lat_deg <= 90.0
+        or not -180.0 <= lon_deg <= 180.0
+    ):
+        print(f"FAIL Position: {lat_deg}, {lon_deg}")
+        return False
+    if roll_deg is None or finite_number(roll_deg) is None or abs(roll_deg) > max_roll_deg:
         print(f"FAIL Roll Deg: {roll_deg}")
         return False
-    if ground_speed_ft_s is None or ground_speed_ft_s < min_ground_speed_ft_s:
+    speed_value = finite_number(ground_speed_ft_s)
+    if speed_value is None or speed_value < min_ground_speed_ft_s:
         print(f"FAIL Ground Speed Ft/s: {ground_speed_ft_s}")
         return False
     return True
@@ -93,7 +129,7 @@ def fuse(
     tel_records: list[dict],
     *,
     max_time_diff_ms: int,
-    min_confidence: float,
+    min_doa_papr_db: float,
     max_roll_deg: float,
     min_ground_speed_ft_s: float,
 ) -> list[dict]:
@@ -104,6 +140,7 @@ def fuse(
     
     # tel_timestamps = build_timestamp_index(tel_records)
     fused = []
+    kraken_records = sorted(kraken_records, key=lambda record: record["t_rx_ms"])
     kraken_timestamps = build_timestamp_index(kraken_records) if kraken_records else []
 
     for t in tel_records:
@@ -117,10 +154,10 @@ def fuse(
             candidate = kraken_records[idx]
             candidate_dt_ms = t_ts - candidate["t_rx_ms"]
 
-            confidence = candidate.get("confidence_0_1")
+            doa_papr_db = get_doa_papr_db(candidate)
 
-            # keep Kraken only if it is close enough and confidence is good enough
-            if abs(candidate_dt_ms) <= max_time_diff_ms and confidence is not None:
+            # Keep Kraken only if it is close enough and has a valid PAPR value.
+            if abs(candidate_dt_ms) <= max_time_diff_ms and doa_papr_db is not None:
                 matched_k = candidate
                 dt_ms = candidate_dt_ms
 
@@ -130,12 +167,15 @@ def fuse(
         usable = False
         if matched_k is not None and dt_ms is not None:
             usable = is_usable(
-                matched_k.get("confidence_0_1"),
+                get_doa_papr_db(matched_k),
+                finite_number(matched_k.get("doa_deg")),
+                finite_number(t.get("lat_deg")),
+                finite_number(t.get("lon_deg")),
                 roll,
                 ground_speed,
                 dt_ms,
                 max_time_diff_ms=max_time_diff_ms,
-                min_confidence=min_confidence,
+                min_doa_papr_db=min_doa_papr_db,
                 max_roll_deg=max_roll_deg,
                 min_ground_speed_ft_s=min_ground_speed_ft_s,
             )
@@ -149,9 +189,39 @@ def fuse(
             "t_rx_ms":          t_ts, #Telem time is the fusion anchor
             "dt_ms":            dt_ms,#Telemetry.t_rx_ms - kraken.t_rx_ms
 
-            
             "doa_deg": matched_k.get("doa_deg") if matched_k else None,
-            "confidence_0_1": matched_k.get("confidence_0_1") if matched_k else None,
+            "doa_papr_db": get_doa_papr_db(matched_k) if matched_k else None,
+            "rssi_power_db": matched_k.get("rssi_power_db") if matched_k else None,
+            "frequency_hz": matched_k.get("frequency_hz") if matched_k else None,
+            "antenna_array_arrangement": (
+                matched_k.get("antenna_array_arrangement") if matched_k else None
+            ),
+            "kraken_latency_ms": matched_k.get("latency_ms") if matched_k else None,
+            "kraken_station_id": matched_k.get("station_id") if matched_k else None,
+            "kraken_lat_deg": matched_k.get("lat_deg") if matched_k else None,
+            "kraken_lon_deg": matched_k.get("lon_deg") if matched_k else None,
+            "gps_heading_deg": matched_k.get("gps_heading_deg") if matched_k else None,
+            "compass_heading_deg": matched_k.get("compass_heading_deg") if matched_k else None,
+            "heading_sensor": matched_k.get("heading_sensor") if matched_k else None,
+            "spectrum_peak_unit_deg": (
+                matched_k.get("spectrum_peak_unit_deg") if matched_k else None
+            ),
+            "spectrum_peak_compass_deg": (
+                matched_k.get("spectrum_peak_compass_deg") if matched_k else None
+            ),
+            "peak_width_deg": matched_k.get("peak_width_deg") if matched_k else None,
+            "peak_to_second_peak_db": (
+                matched_k.get("peak_to_second_peak_db") if matched_k else None
+            ),
+            "spectrum_entropy_0_1": (
+                matched_k.get("spectrum_entropy_0_1") if matched_k else None
+            ),
+            "spectrum_peakiness_0_1": (
+                matched_k.get("spectrum_peakiness_0_1") if matched_k else None
+            ),
+            "spectrum_parse_valid": (
+                matched_k.get("spectrum_parse_valid") if matched_k else None
+            ),
 
             "lat_deg": t.get("lat_deg"),
             "lon_deg": t.get("lon_deg"),
@@ -175,7 +245,13 @@ def fuse(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fused Kraken DOA + telemetry logs.")
     parser.add_argument("--max_time_diff_ms",      type=int,   default=DEFAULT_MAX_TIME_DIFF_MS)
-    parser.add_argument("--min_confidence",        type=float, default=DEFAULT_MIN_CONFIDENCE)
+    parser.add_argument(
+        "--min_doa_papr_db",
+        "--min_confidence",  # Backward-compatible alias for existing launch commands.
+        dest="min_doa_papr_db",
+        type=float,
+        default=DEFAULT_MIN_DOA_PAPR_DB,
+    )
     parser.add_argument("--max_roll_deg",          type=float, default=DEFAULT_MAX_ROLL_DEG)
     parser.add_argument("--min_ground_speed_ft_s", type=float, default=DEFAULT_MIN_GROUND_SPEED_FT_S)
     args = parser.parse_args()
@@ -267,7 +343,7 @@ def main() -> None:
             kraken_records,
             tel_records,
             max_time_diff_ms=args.max_time_diff_ms,
-            min_confidence=args.min_confidence,
+            min_doa_papr_db=args.min_doa_papr_db,
             max_roll_deg=args.max_roll_deg,
             min_ground_speed_ft_s=args.min_ground_speed_ft_s,
         )
@@ -310,7 +386,8 @@ def main() -> None:
             "usable_for_triangulation": n_usable,
 
             "max_time_diff_ms":        args.max_time_diff_ms,
-            "min_confidence":          args.min_confidence,
+            "min_doa_papr_db":         args.min_doa_papr_db,
+            "doa_papr_definition":     "Kraken peak-sharpness metric; not calibrated probability",
             "max_roll_deg":            args.max_roll_deg,
             "min_ground_speed_ft_s":   args.min_ground_speed_ft_s,
         }
