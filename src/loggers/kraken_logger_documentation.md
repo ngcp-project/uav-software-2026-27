@@ -8,7 +8,7 @@ The updated pipeline now has three layers:
 
 ## 1. New Kraken logger fields
 
-The full spectrum is parsed in memory and discarded by default. It is only written if `KRAKEN_SAVE_SPECTRUM=1` is enabled in [kraken_logger.py](<C:/MYDOWNLOADS/Coding/000 Scripts and Files/Personal/ngcp_26-27/uav-software-2026-27/src/loggers/kraken_logger.py:40>).
+The full spectrum is parsed in memory and discarded by default. It is only written if `KRAKEN_SAVE_SPECTRUM=1` is enabled in [kraken_logger.py](</src/loggers/kraken_logger.py:40>).
 
 ### Identification and timing
 
@@ -37,7 +37,7 @@ The full spectrum is parsed in memory and discarded by default. It is only writt
 | `compass_heading_deg` | Compass-derived Kraken heading | May be unavailable. |
 | `heading_sensor` | Heading source used | Usually GPS or Compass. |
 
-These fields are parsed in [parse_endpoint_line](<C:/MYDOWNLOADS/Coding/000 Scripts and Files/Personal/ngcp_26-27/uav-software-2026-27/src/loggers/kraken_logger.py:215>).
+These fields are parsed in [parse_endpoint_line](</src/loggers/kraken_logger.py:215>).
 
 ## 2. Temporary spectrum-derived fields
 
@@ -54,7 +54,7 @@ The logger uses the 360 spectrum to calculate compact summaries.
 | `spectrum_entropy_0_1` | How spread out the spectrum is | Lower usually means more concentrated. |
 | `spectrum_peakiness_0_1` | `1 - entropy` | Higher usually means more concentrated. |
 
-These calculations are implemented in [calculate_spectrum_metrics](<C:/MYDOWNLOADS/Coding/000 Scripts and Files/Personal/ngcp_26-27/uav-software-2026-27/src/loggers/kraken_logger.py:101>).
+These calculations are implemented in [calculate_spectrum_metrics](</src/loggers/kraken_logger.py:101>).
 
 ## 3. Temporary time-based fields
 
@@ -66,9 +66,9 @@ The logger maintains a bounded in-memory history of recent bearings:
 | `temporal_stability_0_1` | Circular consistency of recent bearings | Higher is better. |
 | `temporal_jitter_deg` | Circular bearing variation | Lower is better. |
 
-These are calculated by [update_temporal_metrics](<C:/MYDOWNLOADS/Coding/000 Scripts and Files/Personal/ngcp_26-27/uav-software-2026-27/src/loggers/kraken_logger.py:177>).
+These are calculated by [update_temporal_metrics](</src/loggers/kraken_logger.py:177>).
 
-Important: these temporal fields currently exist in the Kraken JSONL but are not forwarded into the fusion JSONL by [fuse](<C:/MYDOWNLOADS/Coding/000 Scripts and Files/Personal/ngcp_26-27/uav-software-2026-27/src/loggers/fusion_logger.py:91>).
+Important: these temporal fields currently exist in the Kraken JSONL but are not forwarded into the fusion JSONL by [fuse](</src/loggers/fusion_logger.py:91>).
 
 ## What the fusion output looks like
 
@@ -113,9 +113,9 @@ A new fusion record will contain both Kraken and UAV telemetry fields:
 }
 ```
 
-The fusion fields are assembled in [fusion_logger.py](<C:/MYDOWNLOADS/Coding/000 Scripts and Files/Personal/ngcp_26-27/uav-software-2026-27/src/loggers/fusion_logger.py:183>).
+The fusion fields are assembled in [fusion_logger.py](</src/loggers/fusion_logger.py:183>).
 
-The existing archived fusion files, such as [fusion_20260801_144502.jsonl](<C:/MYDOWNLOADS/Coding/000 Scripts and Files/Personal/ngcp_26-27/uav-software-2026-27/logs/fusion/fusion_20260801_144502.jsonl:1>), use the old schema and still contain `confidence_0_1`. New records from the updated logger will use `doa_papr_db`.
+The existing archived fusion files, such as [fusion_20260801_144502.jsonl](</logs/fusion/fusion_20260801_144502.jsonl:1>), use the old schema and still contain `confidence_0_1`. New records from the updated logger will use `doa_papr_db`.
 
 ## How to identify the best bearings
 
@@ -149,6 +149,6 @@ The most useful fields are:
 7. `dt_ms` — Are Kraken and telemetry measurements synchronized?
 8. `roll_deg` and position validity — Is the UAV state suitable for triangulation?
 
-`usable_for_triangulation` is only a gate. In the current [is_usable](<C:/MYDOWNLOADS/Coding/000 Scripts and Files/Personal/ngcp_26-27/uav-software-2026-27/src/loggers/fusion_logger.py:86>) logic, it checks PAPR threshold, DoA range, position, roll, time difference, and ground speed. It does not yet use peak width, entropy, peak separation, or temporal stability.
+`usable_for_triangulation` is only a gate. In the current [is_usable](</src/loggers/fusion_logger.py:86>) logic, it checks PAPR threshold, DoA range, position, roll, time difference, and ground speed. It does not yet use peak width, entropy, peak separation, or temporal stability.
 
 So for actual ranking, use `usable_for_triangulation` first, then score the spectrum and temporal fields. A future fusion improvement should forward the three temporal fields into the fusion output so all bearing-selection logic can operate from one file.

@@ -5,9 +5,9 @@
   "last_sender_sysid": null,
   "last_sender_compid": null,
   "autonomy_command": false,
-  "kraken_log": "/home/lensaki/Projects/ngcp-uav-software/logs/kraken/doa_20260801_144502.jsonl",
-  "telemetry_log": "/home/lensaki/Projects/ngcp-uav-software/logs/telemetry/telemetry_20260801_144501_20260801_144502.jsonl",
-  "fusion_log": "/home/lensaki/Projects/ngcp-uav-software/logs/fusion/fusion_20260801_144502.jsonl",
+  "kraken_log": "C:\\MYDOWNLOADS\\Coding\\000 Scripts and Files\\Personal\\ngcp_26-27\\uav-software-2026-27\\logs\\kraken\\doa_20261113_100727.jsonl",
+  "telemetry_log": "C:\\MYDOWNLOADS\\Coding\\000 Scripts and Files\\Personal\\ngcp_26-27\\uav-software-2026-27\\logs\\telemetry\\telemetry_20261113_100752.jsonl",
+  "fusion_log": "C:\\MYDOWNLOADS\\Coding\\000 Scripts and Files\\Personal\\ngcp_26-27\\uav-software-2026-27\\logs\\fusion\\fusion_20261113_100727.jsonl",
   "controller_status": {
     "fc_mode": "MANUAL",
     "autonomy_active": false,
